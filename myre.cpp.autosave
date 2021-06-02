@@ -1,0 +1,135 @@
+#include "myre.h"
+#include "ui_myre.h"
+Myre::Myre(QWidget *parent)
+    : QMainWindow(parent)
+    , ui(new Ui::Myre)
+{
+    ui->setupUi(this);
+    setFixedSize(800,600);
+    init_myre();
+}
+
+Myre::~Myre()
+{
+    delete ui;
+}
+
+
+
+void Myre::on_pushButton_exit_clicked()
+{
+    close();
+}
+
+void Myre::init_myre()
+{
+    rootObject = myjson.readJsonFileReturnObject(myfilename);
+    rootArray = myjson.readJsonObjectReturnArray(rootObject,"Array");
+
+    QStandardItemModel *model = new QStandardItemModel;
+    for(int i=0;i<rootArray.size();i++)
+    {
+        QJsonValue value = rootArray.at(i);
+
+        QStandardItem *item = new QStandardItem(value["name"].toString());
+        Regs<<value["name"].toString();
+        RegValue<<value["value"].toString();
+        model->appendRow(item);
+    }
+    ui->listView->setModel(model);
+    ui->listView->repaint();
+    ui->listView->setEditTriggers(nullptr);
+}
+
+void Myre::on_pushButton_excute_clicked()
+{
+    ui->textEdit_result->clear();
+    QString src = ui->textEdit_text->toPlainText();
+    QString target = ui->lineEdit->text();
+    qDebug()<<target;
+    if(src.length()==0)
+    {
+        ui->textEdit_result->setText("未找到匹配");
+        ui->textEdit_result->repaint();
+        return;
+    }
+    ui->textEdit_result->clear();
+    ui->textEdit_result->repaint();
+    QRegExp rx(target);
+    Qt::CaseSensitivity cs = Qt::CaseInsensitive;
+    if (ui->checkBox_sensetivity->isChecked())
+        cs = Qt::CaseSensitive;
+    rx.setCaseSensitivity(cs);
+    rx.setMinimal(ui->checkBox_min->isChecked());
+    QString synax = ui->comboBox_pattern->currentText();
+
+    if(synax == "Regular expression V1")
+    {
+        rx.setPatternSyntax(QRegExp::RegExp);
+    }
+    else if(synax == "Regular expression V2")
+    {
+        rx.setPatternSyntax(QRegExp::RegExp2);
+    }
+    else if(synax == "WildCard")
+    {
+        rx.setPatternSyntax(QRegExp::Wildcard);
+    }
+    else if(synax == "Fixed string")
+    {
+        rx.setPatternSyntax(QRegExp::FixedString);
+    }
+    else if(synax == "W3C Xml Schema 1.1")
+    {
+        rx.setPatternSyntax(QRegExp::W3CXmlSchema11);
+    }
+    if(rx.isValid()==false)
+    {
+        ui->textEdit_result->setTextColor(Qt::red);
+        ui->textEdit_result->setText("不合法的正则表达式");
+        ui->textEdit_result->repaint();
+        return;
+    }
+
+
+    int count = 0;
+    int pos = 0;
+    while ((pos = rx.indexIn(src, pos)) != -1)
+    {
+          ++count;
+          qDebug()<<rx.cap(0);
+          pos = rx.matchedLength();
+          qDebug()<<"pos = "<<pos;
+
+          ui->textEdit_result->append(rx.cap(0));
+          QString temp = src;
+//          src = temp.mid(pos);
+          src = temp.remove(rx.cap(0));
+          qDebug()<<"src == "<<src;
+          pos = 0;
+
+    }
+    if(count == 0)
+    {
+        ui->textEdit_result->setText("未找到匹配");
+    }
+
+    ui->textEdit_result->repaint();
+
+
+}
+
+
+void Myre::on_listView_clicked(const QModelIndex &index)
+{
+    QString text = index.data().toString();
+    int row = index.row();
+    QString RegVal = RegValue[row];
+    ui->lineEdit->setText(RegVal);
+    ui->lineEdit->repaint();
+}
+
+void Myre::on_pushButton_openfile_clicked()
+{
+    
+}

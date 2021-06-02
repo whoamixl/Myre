@@ -1,0 +1,57 @@
+#ifndef MYRE_H
+#define MYRE_H
+
+#include <QMainWindow>
+#include"common.h"
+QT_BEGIN_NAMESPACE
+namespace Ui { class Myre; }
+
+QT_END_NAMESPACE
+
+using namespace DJY;
+
+class Myre : public QMainWindow
+{
+    Q_OBJECT
+
+public:
+    Myre(QWidget *parent = nullptr);
+    ~Myre();
+
+    QSet<QString> getAllMatchResults(const QString text,const QString regexp)
+    {
+        QSet<QString>resultSet;
+        QRegExp rx(regexp);
+        int pos=0;
+        while((pos=rx.indexIn(text,pos))!=-1)
+        {
+            pos += rx.matchedLength();
+            QString result=rx.cap(0);
+            resultSet<<result;
+        }
+        return resultSet;
+    }
+
+private slots:
+    void on_pushButton_exit_clicked();
+
+    void on_pushButton_excute_clicked();
+
+    void init_myre();
+
+    void on_listView_clicked(const QModelIndex &index);
+
+private:
+    Ui::Myre *ui;
+
+    QStringList Regs; //支持的正则表达式类型
+
+    QStringList RegValue; //对应的正则表达式内容
+
+    EasyQJson myjson;
+
+    QJsonObject rootObject;
+    QJsonArray rootArray;
+
+};
+#endif // MYRE_H
